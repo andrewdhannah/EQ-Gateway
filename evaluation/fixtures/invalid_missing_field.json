@@ -1,0 +1,47 @@
+{
+  "schema_version": "0.1",
+  "session": {
+    "ephemeral_session_id": "550e8400-e29b-41d4-a716-446655440000",
+    "timestamp_local": "2026-06-08T12:30:00Z",
+    "device_processing_only": false
+  },
+  "affect": {
+    "primary": "frustrated",
+    "secondary": ["confused"],
+    "valence": -0.4,
+    "arousal": 0.7,
+    "confidence": 0.85
+  },
+  "intent": {
+    "category": "emotional_support",
+    "subtype": "Seeking validation",
+    "confidence": 0.76
+  },
+  "risk": {
+    "level": "low",
+    "signals": ["frustration"],
+    "confidence": 0.62,
+    "requires_local_escalation": false
+  },
+  "privacy": {
+    "sensitivity_level": "medium",
+    "raw_text_shared": false,
+    "pii_removed": true,
+    "sensitive_domains_detected": ["workplace"],
+    "redaction_confidence": 0.95
+  },
+  "response_policy": {
+    "tone": "gentle_direct",
+    "warmth": 0.7,
+    "directness": 0.4,
+    "length": "medium",
+    "pace": "steady",
+    "max_followup_questions": 2,
+    "format": "prose"
+  },
+  "context": {
+    "anonymized_summary": "User is frustrated about workplace.",
+    "included_raw_excerpt": false,
+    "retrieval_notes_included": true
+  }
+}

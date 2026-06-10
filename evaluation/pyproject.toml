@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "eq-gateway-eval"
+version = "0.1.0"
+description = "EQ Gateway evaluation harness — schema validation and integration testing"
+requires-python = ">=3.11"
+dependencies = [
+    "jsonschema>=4.20",
+    "pydantic>=2.0",
+]
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-xdist>=3.0"]
+
+[project.urls]
+"Source" = "https://github.com/andrewdhannah/EQ_Gateway"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["eq_gateway_eval*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

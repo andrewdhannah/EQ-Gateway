@@ -1,0 +1,15 @@
+[package]
+name = "eq-memory"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zeroize = { version = "1", features = ["zeroize_derive"] }
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Memory"] }
+
+[lib]
+name = "eq_memory"
+path = "src/lib.rs"

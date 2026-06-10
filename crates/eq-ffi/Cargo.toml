@@ -1,0 +1,20 @@
+[package]
+name = "eq-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+uniffi = { version = "0.31", features = ["cli"] }
+thiserror = "2"
+eq-engine-core = { path = "../eq-engine-core" }
+eq-privacy-filter = { path = "../eq-privacy-filter" }
+eq-memory = { path = "../eq-memory" }
+eq-state-compiler = { path = "../eq-state-compiler" }
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+name = "eq_ffi"
+path = "src/lib.rs"
+
+[build-dependencies]
+uniffi = { version = "0.31", features = ["build"] }

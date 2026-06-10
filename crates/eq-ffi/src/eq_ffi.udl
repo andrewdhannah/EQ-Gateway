@@ -1,0 +1,3 @@
+// Minimal UDL for UniFFI 0.31 scaffolding.
+// The actual interface is defined via #[uniffi::export] proc macros in lib.rs.
+namespace eq_ffi {};

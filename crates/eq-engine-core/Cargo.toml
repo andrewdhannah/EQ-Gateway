@@ -1,0 +1,13 @@
+[package]
+name = "eq-engine-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eq-memory = { path = "../eq-memory" }
+eq-privacy-filter = { path = "../eq-privacy-filter" }
+eq-state-compiler = { path = "../eq-state-compiler" }
+
+[lib]
+name = "eq_engine_core"
+path = "src/lib.rs"

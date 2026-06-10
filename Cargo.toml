@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "crates/eq-engine-core",
+    "crates/eq-privacy-filter",
+    "crates/eq-memory",
+    "crates/eq-state-compiler",
+    "crates/eq-ffi",
+]
+resolver = "2"

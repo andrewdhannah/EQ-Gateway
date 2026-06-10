@@ -1,0 +1,48 @@
+{
+  "schema_version": 42,
+  "session": {
+    "ephemeral_session_id": "not-a-uuid",
+    "timestamp_local": "not-a-datetime",
+    "device_processing_only": "not-a-boolean"
+  },
+  "affect": {
+    "primary": "nonexistent_emotion",
+    "secondary": ["valid_one"],
+    "valence": 999,
+    "arousal": -1,
+    "confidence": 1.5,
+    "evidence_type": 123
+  },
+  "intent": {
+    "category": "made_up_category",
+    "subtype": true,
+    "confidence": "high"
+  },
+  "risk": {
+    "level": "maybe",
+    "signals": "not an array",
+    "confidence": -0.5,
+    "requires_local_escalation": 0
+  },
+  "privacy": {
+    "sensitivity_level": "top_secret",
+    "raw_text_shared": 1,
+    "pii_removed": "maybe",
+    "sensitive_domains_detected": "string",
+    "redaction_confidence": null
+  },
+  "response_policy": {
+    "tone": "invalid_tone",
+    "warmth": 2.5,
+    "directness": "high",
+    "length": "infinite",
+    "pace": 42,
+    "max_followup_questions": -1,
+    "format": null
+  },
+  "context": {
+    "anonymized_summary": null,
+    "included_raw_excerpt": 1,
+    "retrieval_notes_included": "yes"
+  }
+}

@@ -1,0 +1,33 @@
+﻿## Rust
+target/
+
+## Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.iml
+.idea/
+*.apk
+*.ap_
+*.aab
+*.dex
+
+## Python
+evaluation/.pytest_cache/
+evaluation/__pycache__/
+evaluation/src/__pycache__/
+evaluation/*.egg-info/
+**/__pycache__/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Editor
+*.swp
+*.swo
+*~
+
+## Cargo
+.cargo/config.toml

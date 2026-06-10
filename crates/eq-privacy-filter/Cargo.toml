@@ -1,0 +1,12 @@
+[package]
+name = "eq-privacy-filter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+regex = "1"
+eq-memory = { path = "../eq-memory" }
+
+[lib]
+name = "eq_privacy_filter"
+path = "src/lib.rs"

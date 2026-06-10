@@ -1,0 +1,6 @@
+# EQ Gateway Evaluation Harness — Python Dependencies
+# Install: pip install -r requirements.txt
+
+jsonschema>=4.20
+pydantic>=2.0
+pytest>=8.0
