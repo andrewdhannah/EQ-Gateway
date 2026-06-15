@@ -1,0 +1,13 @@
+# Receipts (observability data)
+receipts/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Demo artifacts
+demo/last_result.json
+demo/debug_parse.py
+demo/capture_output.py

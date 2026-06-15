@@ -1,0 +1,17 @@
+[project]
+name = "agent-gateway"
+version = "0.1.0"
+description = "EQ Gateway Agent Service — FastAPI + LangGraph HITL + Receipts"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.137",
+    "uvicorn>=0.46",
+    "pydantic>=2.13",
+    "pydantic-settings>=2.14",
+    "httpx>=0.28",
+    "langgraph>=1.2",
+    "langgraph-checkpoint>=4.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=9", "pytest-asyncio>=0.25"]
