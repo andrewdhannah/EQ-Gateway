@@ -78,7 +78,7 @@ To meet mobile constraints, models must implement:
 ## 5. Privacy & Security Model
 
 ### 5.1 The "Rust Guard" Principle
-The use of Rust for the engine layer provides a mathematical guarantee of memory safety. This ensures that raw PII handled during the "Local Capture" phase cannot be accessed by unauthorized memory reads, reinforcing the "Privacy Firewall" brand promise.
+The use of Rust for the engine layer significantly reduces memory-safety risk in the sensitive data processing layer. This ensures that raw PII handled during the "Local Capture" phase is protected by strong ownership and borrowing rules, reinforcing the "Privacy Firewall" brand promise while treating FFI boundaries as explicit audit points.
 
 ### 5.2 Privacy Tiers
 *   **Tier 0 (Fully Local):** No data leaves the device.
