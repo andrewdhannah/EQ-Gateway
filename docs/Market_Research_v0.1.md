@@ -600,10 +600,10 @@ Enterprise can come later, but only with careful positioning.
 
 ## 10. Messaging Pillars
 
-### Pillar 1 — Local Emotional Privacy
+### Pillar 1 — Local Context Privacy
 
 ```text
-The emotionally sensitive layer stays on the device by default.
+The context boundary stays on the device by default.
 ```
 
 ### Pillar 2 — Structured EQ, Not Raw Exposure

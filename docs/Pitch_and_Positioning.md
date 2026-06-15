@@ -514,5 +514,5 @@ An MCP-compatible on-device affective context broker.
 Best strategic phrase:
 
 ```text
-The emotionally sensitive layer should not live in the cloud by default.
+The context boundary should not live in the cloud by default.
 ```
