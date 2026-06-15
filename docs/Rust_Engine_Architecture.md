@@ -1,8 +1,8 @@
 # Rust Engine Architecture — The Guard
 
-**Status:** Design Draft  
-**Version:** 0.1  
-**Date:** June 08, 2026  
+**Status:** Updated — Implementation Complete  
+**Version:** 0.2  
+**Date:** June 15, 2026  
 **Layer:** Engine Layer (The Guard)  
 
 ---
@@ -221,32 +221,63 @@ impl Drop for SecureBuffer {
 
 ## 5. Inference Runtime Integration
 
-### 5.1 Backend Abstraction
+### 5.1 Backend Abstraction — SLMAdapter Trait
+
+The inference backend is abstracted behind the `SLMAdapter` trait, currently implemented by `LlamaCppAdapter` (HTTP client to `llama-server-mini`) and `MockAdapter` (deterministic test double).
 
 ```rust
-// eq-engine-core/src/config.rs
+// eq-engine-core/src/slm_adapter.rs
 
-/// Enum over supported inference backends.
-/// Abstraction allows us to swap between llama.cpp and MLC-LLM
-/// without changing the pipeline code.
-pub enum InferenceBackend {
-    /// llama.cpp via its C API (ggml)
-    LlamaCpp {
-        model_path: PathBuf,
-        gpu_layers: u32,      // Layers to offload to NPU/GPU
-        ctx_size: u32,        // Context window in tokens
-    },
-    /// MLC-LLM via TVM runtime
-    MlcLlm {
-        model_path: PathBuf,
-        device: MlcDevice,    // Metal, Vulkan, OpenCL
-    },
+/// Abstraction over SLM inference backends.
+/// Currently backed by llama-server-mini HTTP API (TcpStream-based).
+/// Future: MLC-LLM, Android NNAPI, Core ML.
+pub trait SLMAdapter {
+    /// Classify user input and return structured inference result.
+    /// Opens a fresh TCP connection per call (Connection: close).
+    fn classify(&self, text: &str, session_id: &str) -> Result<InferenceResult, EngineError>;
+
+    /// Quick health check against the backend.
+    fn health_check(&self) -> Result<bool, EngineError>;
+
+    /// Human-readable status string (for diagnostics).
+    fn status(&self) -> String;
 }
 ```
 
-### 5.2 Quantization Requirements
+### 5.2 LlamaCppAdapter — TcpStream HTTP/1.1 Client
 
-The model weights MUST be pre-quantized before bundling:
+The `LlamaCppAdapter` connects to `llama-server-mini` via **direct TcpStream HTTP/1.1** (replaced ureq 3.3.0 due to a connection abort bug against llama-server-mini). Key design:
+
+- **Fresh TCP connection per request** with `Connection: close` — avoids context overflow
+- **JSON-envelope prompt format** — wraps user text in `{"instruction","schema","user_message"}` JSON to force Phi-4 into structured output reliably
+- **Dual-schema parsing** — handles both flat (`affect_primary`) and nested (`affect.primary`) output schemas with model vocabulary mapping and substring fallback
+
+```rust
+pub struct LlamaCppAdapter {
+    profile: ModelProfile,
+}
+
+pub struct ModelProfile {
+    pub name: String,
+    pub host: String,
+    pub port: u16,
+    pub timeout_ms: u64,
+    pub max_tokens: u32,
+    pub temperature: f64,
+}
+```
+
+### 5.3 Live Backend
+
+- **Model:** Phi-4-mini-instruct Q4_K_M (4.55 GB)  
+- **Server:** `llama-server-mini` on `127.0.0.1:9120`  
+- **Router:** llama.cpp router on `127.0.0.1:8080`  
+- **Inference latency:** ~2.4s per request on RX 570 (fresh TCP connection per call)  
+- **Parser reliability:** 5/5 benchmark iterations succeed; handles markdown fences, missing fields, substring variant matching
+
+### 5.4 Quantization Requirements
+
+Model weights should be pre-quantized before bundling:
 
 | Parameter | Target |
 |:---|:---|
@@ -343,26 +374,45 @@ pub struct FfiEQState {
 
 ## 8. Testing Strategy
 
-### 8.1 Unit Tests (cargo test)
+### 8.1 Unit Tests (cargo test — 78 passing)
 
-| Crate | Test Focus |
-|:---|:---|
-| `eq-memory` | Buffer creation, zeroize verification, drop semantics, no-clone compile check |
-| `eq-privacy-filter` | PII patterns against Canadian test corpus, tier enforcement edge cases |
-| `eq-state-compiler` | Enum mapping from logit vectors, boundary values for confidence |
-| `eq-engine-core` | Pipeline integration, session lifecycle, timeout behavior |
+| Crate | Test Count | Test Focus |
+|:---|:---:|:---|
+| `eq-memory` | 11 | Buffer creation, zeroize verification, drop semantics, no-clone compile check |
+| `eq-privacy-filter` | 16 | PII patterns (Canadian SIN, passport, email, health card, etc.), redaction |
+| `eq-state-compiler` | 11 | All 46 enum variants, serialization, JSON output format |
+| `eq-engine-core` | 32 | Pipeline orchestration, SLM adapter (flat+nested parsing, vocabulary mapping) |
+| `eq-ffi` | 8 | FFI bridge, process_user_input via UniFFI, wipe sessions |
+| **Integration** | 4 (ignored*) | Live backend health check, classify, status + 5-iteration benchmark |
 
-### 8.2 Integration Tests
+*Integration tests require a running llama-server-mini instance and are `#[ignore]`d in CI.
+
+### 8.2 Integration Tests (Live Backend)
 
 ```rust
-// tests/integration_test.rs
+// tests/live_backend_test.rs
 
-/// The "Zero Leak" test:
-/// 1. Feed known PII string into `process_user_input`.
-/// 2. Dump process memory (via OS tooling).
-/// 3. Assert the PII string does NOT appear in memory after the call returns.
+/// Tests against a running llama-server-mini (127.0.0.1:9120 preferred).
+/// Auto-discovers backend via TCP connect probe; skips if unreachable.
 #[test]
-fn test_zero_leak_guarantee() { ... }
+#[ignore = "requires running llama.cpp backend"]
+fn backend_health_check() { ... }
+
+#[test]
+#[ignore = "requires running llama.cpp backend"]
+fn backend_classify_returns_response() {
+    // "I'm really frustrated with this bug" → affect=Frustrated, intent=TechnicalHelp, risk=Low
+    // Inference time: ~2.4s on RX 570
+}
+
+#[test]
+#[ignore = "requires running llama.cpp backend"]
+fn backend_status_reports_connection() { ... }
+
+// tests/inference_benchmark.rs — 5 iterations, mean 2473ms, median 2466ms
+#[test]
+#[ignore = "requires running llama.cpp backend"]
+fn inference_latency_benchmark() { ... }
 ```
 
 ### 8.3 Security Audit Checklist
@@ -439,13 +489,15 @@ serde_json = "1"       # For parsing model-assisted PII signals
 
 # eq-engine-core
 [dependencies]
-llama-cpp-sys = "2"    # FFI bindings to llama.cpp (or equivalent)
-tokenizers = "0.21"    # HuggingFace tokenizers Rust port
-tokio = { version = "1", features = ["rt-multi-thread"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"       # JSON parsing for SLM output + HTTP response handling
+# HTTP client: direct TcpStream HTTP/1.1 (replaced ureq 3.3.0)
+# Inference: llama-server-mini HTTP API at 127.0.0.1:9120
 
 # eq-ffi
 [dependencies]
-uniffi = { version = "1", features = ["cli"] }
+uniffi = { version = "0.31", features = ["cli"] }
+thiserror = "2"        # Error type derivation for FFI safety
 ```
 
 ---

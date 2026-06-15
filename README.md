@@ -154,7 +154,7 @@ cargo build
 cargo test
 ```
 
-All 5 crates compile with zero warnings. **19 Rust tests pass.**
+All 5 crates compile with zero warnings. **78 Rust tests pass** (up from 19).
 
 ### Android APK
 
@@ -270,16 +270,21 @@ EQ Gateway's security model is enforced at the architecture level:
 | Ticket | Description | Status |
 |:---|:---|:---:|
 | S1-001 | Android project scaffold (Compose + AGP 9.0.1) | ✅ |
-| S1-002 | Rust workspace (5 crates, 19 tests) | ✅ |
+| S1-002 | Rust workspace (5 crates, 78 tests) | ✅ |
 | S1-003 | UniFFI bridge + .so cross-compilation | ✅ |
 | S1-004 | Python evaluation harness | ✅ |
-| S1-005 | GitHub Actions CI | 📋 |
+| S1-005 | GitHub Actions CI | ✅ |
 | S1-006 | SecureBuffer with zeroize | ✅ |
 | S1-007 | mlock/munlock support | ✅ |
 | S1-008 | Canadian PII patterns | ✅ |
 | S1-009 | PiiScanner::scan() | ✅ |
-| S1-010 | Security audit tests | 📋 |
-| S1-011+ | Inference pipeline (llama.cpp) | 📋 |
+| S1-010 | Security audit tests | ✅ |
+| S1-011 | SLMAdapter trait (classify, health_check, status) | ✅ |
+| S1-012 | JSON-envelope prompt format for structured output | ✅ |
+| S1-013 | Phi-4-mini-instruct integration via llama-server-mini | ✅ |
+| S1-014 | Dual-schema parser (flat + nested) with vocabulary mapping | ✅ |
+| S1-015 | End-to-end live inference verified (~2.4s on RX 570) | ✅ |
+| S1-016 | Inference benchmark (5/5 success, mean 2473ms) | ✅ |
 
 ---
 

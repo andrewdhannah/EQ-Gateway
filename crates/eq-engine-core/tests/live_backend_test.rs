@@ -88,14 +88,14 @@ fn discover_backend() -> Option<(String, u16)> {
         return None;
     }
 
-    // Try router (port 8080)
-    if can_connect("127.0.0.1", 8080) {
-        return Some(("127.0.0.1".to_string(), 8080));
-    }
-
-    // Try backend directly (port 9120)
+    // Try backend directly first (port 9120) — this preserves our system prompt
     if can_connect("127.0.0.1", 9120) {
         return Some(("127.0.0.1".to_string(), 9120));
+    }
+
+    // Fall back to router (port 8080) — may replace system prompts
+    if can_connect("127.0.0.1", 8080) {
+        return Some(("127.0.0.1".to_string(), 8080));
     }
 
     None

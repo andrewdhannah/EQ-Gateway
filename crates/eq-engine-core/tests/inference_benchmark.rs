@@ -125,6 +125,7 @@ fn inference_latency_benchmark() {
     );
 
     for (i, prompt) in prompts.iter().enumerate() {
+        // Send the classify request via adapter (each call opens fresh TCP with Connection: close)
         let start = Instant::now();
         let result = adapter.classify(prompt, &format!("bench-session-{}", i));
         let elapsed = start.elapsed();
@@ -146,6 +147,16 @@ fn inference_latency_benchmark() {
             status,
             prompt,
         );
+
+        // Debug: print the actual error
+        if let Err(e) = &result {
+            let err_msg = format!("{}", e);
+            if err_msg.len() > 100 {
+                eprintln!("        err: {:>.100}", err_msg);
+            } else {
+                eprintln!("        err: {}", err_msg);
+            }
+        }
 
         times.push(elapsed_ms as u64);
     }
