@@ -5,15 +5,24 @@
 //!
 //! # Pipeline
 //! 1. Raw text is loaded into a [`SecureBuffer`] (memory-safe, zeroed on drop)
-//! 2. Text is tokenized and passed to the SLM for inference
-//! 3. Logits are extracted and classified into affect, intent, and risk
-//! 4. PII detection and redaction are applied (via [`eq_privacy_filter`])
+//! 2. PII detection and redaction are applied (via [`eq_privacy_filter`])
+//! 3. Text is sent to the SLM for inference (via [`slm_adapter::SLMAdapter`])
+//! 4. SLM output is classified into affect, intent, and risk
 //! 5. The EQ State is compiled (via [`eq_state_compiler`])
 //! 6. The SecureBuffer is zeroed
 //! 7. The EQ State JSON is returned
+//!
+//! # SLM Adapter
+//! The crate provides an [`slm_adapter::SLMAdapter`] trait that abstracts over
+//! inference backends. Two implementations are provided:
+//! - [`slm_adapter::LlamaCppAdapter`] — real HTTP calls to local llama.cpp
+//! - [`slm_adapter::MockAdapter`] — deterministic results for testing
+
+pub mod slm_adapter;
 
 use eq_memory::SecureBuffer;
 use eq_privacy_filter::{PiiScanner, ScanResult};
+use slm_adapter::{InferenceResult, ModelProfile, SLMAdapter};
 
 /// Configuration for the EQ Engine.
 #[derive(Debug, Clone)]
@@ -26,6 +35,8 @@ pub struct EngineConfig {
     pub context_size: u32,
     /// Maximum inference time in milliseconds
     pub timeout_ms: u64,
+    /// SLM model profile (host, port, model name, etc.)
+    pub model_profile: ModelProfile,
 }
 
 impl Default for EngineConfig {
@@ -35,6 +46,7 @@ impl Default for EngineConfig {
             gpu_layers: 99,
             context_size: 4096,
             timeout_ms: 5000,
+            model_profile: ModelProfile::default(),
         }
     }
 }
@@ -89,6 +101,7 @@ pub struct ProcessedOutput {
 pub struct EQEngine {
     config: EngineConfig,
     pii_scanner: PiiScanner,
+    adapter: Box<dyn SLMAdapter>,
 }
 
 impl EQEngine {
@@ -98,12 +111,32 @@ impl EQEngine {
     /// * `config` - Engine configuration (model path, GPU layers, etc.)
     ///
     /// # Returns
-    /// A configured EQEngine instance. Call `initialize()` before first use.
+    /// A configured EQEngine instance. Uses a default [`slm_adapter::MockAdapter`]
+    /// for testing. Call [`with_adapter`](Self::with_adapter) to set a real backend.
     pub fn new(config: EngineConfig) -> Self {
         EQEngine {
             pii_scanner: PiiScanner::new(),
+            adapter: Box::new(slm_adapter::MockAdapter::new()),
             config,
         }
+    }
+
+    /// Create a new EQ Engine with a specific SLM adapter.
+    ///
+    /// # Arguments
+    /// * `config` - Engine configuration
+    /// * `adapter` - SLM inference backend adapter
+    pub fn with_adapter(config: EngineConfig, adapter: Box<dyn SLMAdapter>) -> Self {
+        EQEngine {
+            pii_scanner: PiiScanner::new(),
+            adapter,
+            config,
+        }
+    }
+
+    /// Replace the SLM adapter after construction.
+    pub fn set_adapter(&mut self, adapter: Box<dyn SLMAdapter>) {
+        self.adapter = adapter;
     }
 
     /// Initialize the engine (load the model into memory).
@@ -154,7 +187,26 @@ impl EQEngine {
             Ok::<_, EngineError>(self.pii_scanner.redact(text, "[REDACTED]"))
         })?;
 
-        // Step 4: Build the EQ State
+        // Step 4: SLM inference via the adapter
+        let inference: InferenceResult = match self.adapter.classify(&anonymized, session_id) {
+            Ok(result) => result,
+            Err(EngineError::InferenceTimeout) => {
+                // Return a degraded result on timeout instead of failing
+                InferenceResult {
+                    raw_output: String::new(),
+                    affect_primary: eq_state_compiler::AffectPrimary::Unknown,
+                    affect_valence: 0.0,
+                    affect_arousal: 0.0,
+                    intent_category: eq_state_compiler::IntentCategory::Unknown,
+                    risk_level: eq_state_compiler::RiskLevel::Unknown,
+                    anonymized_summary: anonymized.clone(),
+                    processing_time_ms: start.elapsed().as_millis() as u64,
+                }
+            }
+            Err(e) => return Err(e),
+        };
+
+        // Step 5: Build the EQ State from inference results
         let eq_state = eq_state_compiler::EQState {
             schema_version: "0.1".to_string(),
             session: eq_state_compiler::SessionInfo {
@@ -163,23 +215,23 @@ impl EQEngine {
                 device_processing_only: false,
             },
             affect: eq_state_compiler::AffectState {
-                primary: eq_state_compiler::AffectPrimary::Neutral,
+                primary: inference.affect_primary,
                 secondary: vec![],
-                valence: 0.0,
-                arousal: 0.3,
-                confidence: 0.5,
-                evidence_type: "semantic_inference".to_string(),
+                valence: inference.affect_valence,
+                arousal: inference.affect_arousal,
+                confidence: 0.7,
+                evidence_type: "slm_classification".to_string(),
             },
             intent: eq_state_compiler::IntentState {
-                category: eq_state_compiler::IntentCategory::Unknown,
-                subtype: "awaiting_classification".to_string(),
-                confidence: 0.5,
+                category: inference.intent_category,
+                subtype: "classified_by_slm".to_string(),
+                confidence: 0.7,
             },
             risk: eq_state_compiler::RiskState {
-                level: eq_state_compiler::RiskLevel::None,
+                level: inference.risk_level.clone(),
                 signals: vec![],
-                confidence: 0.5,
-                requires_local_escalation: false,
+                confidence: 0.7,
+                requires_local_escalation: matches!(inference.risk_level, eq_state_compiler::RiskLevel::High | eq_state_compiler::RiskLevel::Crisis),
             },
             privacy: eq_state_compiler::PrivacyState {
                 sensitivity_level: eq_state_compiler::PrivacySensitivity::Medium,
@@ -198,13 +250,14 @@ impl EQEngine {
                 format: "prose".to_string(),
             },
             context: eq_state_compiler::ContextState {
-                anonymized_summary: anonymized,
+                anonymized_summary: inference.anonymized_summary,
                 included_raw_excerpt: false,
                 retrieval_notes_included: false,
             },
         };
 
-        // Step 5: buffer is dropped here — memory is zeroed automatically
+        // Step 6: buffer is dropped here — memory is zeroed automatically
+        // Step 7: inference result is returned
 
         let elapsed = start.elapsed().as_millis() as u64;
 
