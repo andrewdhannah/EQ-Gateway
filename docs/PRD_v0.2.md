@@ -32,11 +32,11 @@
 
 ## 1. Executive Summary
 
-**EQ Gateway** is a privacy-preserving emotional context middleware layer for AI systems. It uses a small language model (SLM) running locally on a mobile device to infer a user's emotional state, intent, risk level, and privacy sensitivity. Instead of sending raw personal data to a cloud AI, the local SLM produces a constrained, anonymized, structured **EQ State** payload. This payload is passed via an MCP (Model Context Protocol) bridge to a larger cloud AI, allowing it to adapt its tone and response strategy **without ever accessing the user's private text**.
+**EQ Gateway** is a local context firewall for agentic AI. It uses a small language model (SLM) running locally on a mobile device to convert raw user input into a constrained, anonymized, structured **EQ State** payload. This payload is passed via an MCP (Model Context Protocol) bridge to a larger cloud AI, allowing it to adapt its tone and response strategy **without ever accessing the user's private text**.
 
 ### The Core Thesis
 
-> Keep the emotionally sensitive layer local. Let larger AI reason over anonymized emotional metadata rather than raw private context.
+> Keep the context boundary local. Let larger AI reason over structured EQ State metadata rather than raw private context.
 
 ### Key Differentiator
 

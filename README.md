@@ -1,6 +1,6 @@
 # EQ Gateway — Local Context Firewall for Agentic AI
 
-**Privacy-preserving emotional context middleware for AI systems.**
+**On-device privacy firewall for agentic AI. Converts raw user input into structured EQ State metadata — no raw text leaves the device.**
 
 [![Rust](https://img.shields.io/badge/Rust-1.85%2B-dea584)](https://www.rust-lang.org)
 [![Android](https://img.shields.io/badge/Android-SDK%2036-3ddc84)](https://developer.android.com)
@@ -15,7 +15,7 @@ EQ Gateway is an on-device privacy layer for emotionally intelligent AI. It conv
 
 ### The Core Thesis
 
-> Keep the emotionally sensitive layer local. Let larger AI reason over anonymized emotional metadata rather than raw private context.
+> Keep the context boundary local. Let larger AI reason over structured EQ State metadata rather than raw private context.
 
 ### Key Differentiator
 
@@ -246,4 +246,3 @@ Full design documentation is available in the [`docs/`](docs/) directory:
 | [Sprint 2 Plan](docs/Sprint_2_Plan.md) | Detailed sprint breakdown |
 | [Market Research](docs/Market_Research_v0.1.md) | Competitive landscape & positioning |
 | [MCP Data Flow](docs/MCP_Data_Flow.md) | Security model & data flow |
- la l l

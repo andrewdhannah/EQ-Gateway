@@ -5,16 +5,16 @@
 **Date:** June 04, 2026  
 **Version:** 0.2  
 **Working Title:** EQ Gateway  
-**Product Category:** On-device SLM + privacy-preserving emotional context middleware + MCP bridge
+**Product Category:** Local Context Firewall for Agentic AI
 
 ---
 
 ## 1. Executive Summary
 
-**EQ Gateway** is a privacy-preserving emotional context system that uses a small language model (SLM) running locally on a mobile device to infer a user’s mood, communication needs, risk state, and contextual preferences. Instead of sending raw personal data to a cloud model, the local SLM produces a constrained, anonymized, structured emotional-state payload (**EQ State**). This payload is passed via an MCP interface to a larger AI, allowing the cloud model to adapt its tone and strategy without accessing private user history.
+**EQ Gateway** is a local context firewall for agentic AI. It uses a small language model (SLM) running locally on a mobile device to convert raw user input into a constrained, anonymized, structured metadata payload (**EQ State**). This payload is passed via an MCP interface to a larger AI, allowing the cloud model to adapt its tone and strategy without accessing private user text.
 
 The product thesis:
-> Keep the emotionally sensitive layer local. Let larger AI reason over anonymized emotional metadata rather than raw private context.
+> Keep the context boundary local. Let larger AI reason over structured EQ State metadata rather than raw private context.
 
 ---
 
@@ -28,7 +28,7 @@ The system implements a "Dual-Layer" architecture:
 ### The Privacy Pivot
 Unlike traditional assistants that scale personalization via data collection, EQ Gateway scales via **structured metadata**.
 *   *Traditional:* More data $\rightarrow$ More personalization $\rightarrow$ Higher risk.
-*   *EQ Gateway:* Less raw data $\rightarrow$ More useful emotional structure $\rightarrow$ Lower risk.
+*   *EQ Gateway:* Less raw data $\rightarrow$ More useful structured metadata $\rightarrow$ Lower risk.
 
 ---
 
@@ -99,4 +99,4 @@ The use of Rust for the engine layer significantly reduces memory-safety risk in
 
 ## 7. Final Product Thesis
 
-EQ Gateway is a **Local Emotional Firewall**. It enables high-utility, emotionally adaptive AI experiences by ensuring that the most sensitive data—human emotion and private context—never leaves the owner's device in its raw form.
+EQ Gateway is a **Local Context Firewall**. It enables high-utility, context-aware AI experiences by ensuring that the most sensitive data—private context—never leaves the owner's device in its raw form.

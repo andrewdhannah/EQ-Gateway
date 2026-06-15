@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="EQ Gateway — Agent Service",
     version="0.1.0",
-    description="Privacy-preserving emotional context middleware with HITL gates",
+    description="Local context firewall for agentic AI with HITL gates",
 )
 
 app.add_middleware(
