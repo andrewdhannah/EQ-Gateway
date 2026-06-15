@@ -279,4 +279,108 @@ mod tests {
     fn test_version_constant() {
         assert_eq!(EQEngine::version(), "0.1.0");
     }
+
+    #[test]
+    fn test_engine_config_defaults() {
+        let config = EngineConfig::default();
+        assert_eq!(config.gpu_layers, 99);
+        assert_eq!(config.context_size, 4096);
+        assert_eq!(config.timeout_ms, 5000);
+        assert!(config.model_path.is_empty());
+    }
+
+    #[test]
+    fn test_engine_error_display() {
+        let errors = vec![
+            (EngineError::ModelNotFound("/nope".into()), "Model not found at: /nope"),
+            (EngineError::InferenceTimeout, "Inference timed out"),
+            (EngineError::MemoryLockFailed("EACCES".into()), "Memory lock failed: EACCES"),
+            (EngineError::PiiScanOverflow("too complex".into()), "PII scan overflow: too complex"),
+            (EngineError::BufferPoisoned, "SecureBuffer integrity check failed"),
+            (EngineError::ConfigError("bad ctx".into()), "Configuration error: bad ctx"),
+        ];
+        for (error, expected) in errors {
+            assert_eq!(error.to_string(), expected, "Mismatch for {:?}", error);
+        }
+    }
+
+    #[test]
+    fn test_initialize_with_empty_path_ok() {
+        let mut engine = EQEngine::new(EngineConfig::default());
+        assert!(engine.initialize().is_ok());
+    }
+
+    #[test]
+    fn test_initialize_with_nonexistent_path_errors() {
+        let config = EngineConfig {
+            model_path: "/nonexistent/model.gguf".to_string(),
+            ..EngineConfig::default()
+        };
+        let mut engine = EQEngine::new(config);
+        let result = engine.initialize();
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            EngineError::ModelNotFound(p) => assert!(p.contains("nonexistent")),
+            other => panic!("Expected ModelNotFound, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_process_empty_text() {
+        let mut engine = create_test_engine();
+        let result = engine.process_user_input(
+            String::new(),
+            "test-empty",
+        );
+        assert!(result.is_ok());
+        let output = result.unwrap();
+        assert!(output.eq_state_json.contains("schema_version"));
+        assert!(output.pii_scan.clean);
+    }
+
+    #[test]
+    fn test_process_text_with_only_pii() {
+        let mut engine = create_test_engine();
+        let result = engine.process_user_input(
+            "123-456-789".to_string(),
+            "test-pii-only",
+        );
+        assert!(result.is_ok());
+        let output = result.unwrap();
+        // All PII should be redacted
+        assert!(!output.eq_state_json.contains("123-456-789"));
+        assert_eq!(output.pii_scan.clean, false);
+        assert!(output.pii_scan.critical_count > 0);
+    }
+
+    #[test]
+    fn test_processing_time_reported() {
+        let mut engine = create_test_engine();
+        let result = engine.process_user_input(
+            "Hello world".to_string(),
+            "test-timing",
+        );
+        assert!(result.is_ok());
+        // Processing time should be a positive value
+        assert!(result.unwrap().processing_time_ms > 0);
+    }
+
+    #[test]
+    fn test_eq_state_contains_all_sections() {
+        let mut engine = create_test_engine();
+        let result = engine.process_user_input(
+            "I'm feeling anxious about my presentation tomorrow".to_string(),
+            "test-sections",
+        );
+        assert!(result.is_ok());
+        let json = result.unwrap().eq_state_json;
+        assert!(json.contains("\"schema_version\""));
+        assert!(json.contains("\"session\""));
+        assert!(json.contains("\"affect\""));
+        assert!(json.contains("\"intent\""));
+        assert!(json.contains("\"risk\""));
+        assert!(json.contains("\"privacy\""));
+        assert!(json.contains("\"response_policy\""));
+        assert!(json.contains("\"context\""));
+    }
 }

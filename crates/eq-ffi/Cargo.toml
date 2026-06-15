@@ -16,5 +16,8 @@ crate-type = ["cdylib", "staticlib"]
 name = "eq_ffi"
 path = "src/lib.rs"
 
+[dev-dependencies]
+serde_json = "1"
+
 [build-dependencies]
 uniffi = { version = "0.31", features = ["build"] }

@@ -155,4 +155,55 @@ mod tests {
         // But the context should mention the redaction happened
         assert!(json.contains("pii_removed"));
     }
+
+    #[test]
+    fn test_wipe_all_sessions() {
+        let result = wipe_all_sessions();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_engine_status_format() {
+        let status = engine_status();
+        // Should be valid-ish JSON
+        assert!(status.starts_with('{'));
+        assert!(status.ends_with('}'));
+        assert!(status.contains("engine"));
+        assert!(status.contains("version"));
+        assert!(status.contains("status"));
+    }
+
+    #[test]
+    fn test_ffi_with_empty_text() {
+        let result = process_user_input(
+            String::new(),
+            "empty-test".to_string(),
+        );
+        assert!(result.is_ok());
+        let json = result.unwrap();
+        assert!(json.contains("schema_version"));
+    }
+
+    #[test]
+    fn test_ffi_with_long_text() {
+        let long_text = "Hello, this is a test. ".repeat(100);
+        let result = process_user_input(
+            long_text,
+            "long-test".to_string(),
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_ffi_result_is_valid_json() {
+        let result = process_user_input(
+            "Test message.".to_string(),
+            "json-test".to_string(),
+        );
+        assert!(result.is_ok());
+        let json = result.unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json)
+            .expect("FFI output should be valid JSON");
+        assert!(parsed.is_object());
+    }
 }

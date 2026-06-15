@@ -209,4 +209,54 @@ mod tests {
         fn assert_not_clone<T>() {}
         assert_not_clone::<SecureBuffer>();
     }
+
+    #[test]
+    fn test_multiple_buffers_sequential() {
+        // Create and drop multiple buffers to verify no memory leaks
+        for i in 0..100 {
+            let text = format!("secret data item number {}", i);
+            let _buffer = SecureBuffer::from_string(text);
+        }
+        // If we reach here, no panics from memory management
+    }
+
+    #[test]
+    fn test_multibyte_utf8() {
+        let mut buffer = SecureBuffer::from_string("émoji 😊 — café à la carte".to_string());
+        buffer.with_raw(|bytes| {
+            let text = std::str::from_utf8(bytes).expect("Valid UTF-8");
+            assert!(text.contains("émoji 😊"));
+            assert!(text.contains("café"));
+        });
+    }
+
+    #[test]
+    fn test_buffer_len_after_with_raw() {
+        let original = "secure payload".to_string();
+        let len_before = original.len();
+        let mut buffer = SecureBuffer::from_string(original);
+        assert_eq!(buffer.len(), len_before);
+        buffer.with_raw(|bytes| {
+            assert_eq!(bytes.len(), len_before);
+        });
+        // Length still accessible after closure
+        assert_eq!(buffer.len(), len_before);
+    }
+
+    /// Verify that lock status is reported (may be false on CI without mlock)
+    #[test]
+    fn test_lock_status_query() {
+        let buffer = SecureBuffer::from_string("test".to_string());
+        // On most platforms this will be false (no mlock), but the API should work
+        let _locked = buffer.is_locked();
+    }
+
+    #[test]
+    fn test_large_buffer() {
+        // 1 MB buffer — verify large allocations don't break
+        let large = "A".repeat(1024 * 1024);
+        let mut buffer = SecureBuffer::from_string(large);
+        let count = buffer.with_raw(|bytes| bytes.len());
+        assert_eq!(count, 1024 * 1024);
+    }
 }

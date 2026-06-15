@@ -276,4 +276,111 @@ mod tests {
         assert!(!result.clean);
         assert!(result.matches.iter().any(|m| m.pattern_name == "Canadian Passport"));
     }
+
+    /// Verify that non-PII number patterns don't cause false positives
+    #[test]
+    fn test_avoid_false_positives() {
+        let scanner = PiiScanner::new();
+        // Normal conversation numbers should not trigger
+        let result = scanner.scan(
+            "I have 2 cats and 3 dogs. My house number is 42."
+        );
+        assert!(result.clean);
+    }
+
+    #[test]
+    fn test_pii_at_start_of_string() {
+        let scanner = PiiScanner::new();
+        let result = scanner.scan("test@example.com is my email");
+        assert!(!result.clean);
+        assert!(result.matches.iter().any(|m| m.pattern_name == "Email"));
+    }
+
+    #[test]
+    fn test_pii_at_end_of_string() {
+        let scanner = PiiScanner::new();
+        let result = scanner.scan("my email is test@example.com");
+        assert!(!result.clean);
+        assert!(result.matches.iter().any(|m| m.pattern_name == "Email"));
+    }
+
+    #[test]
+    fn test_multiple_pii_types() {
+        let scanner = PiiScanner::new();
+        let result = scanner.scan(
+            "John: SIN 123-456-789, email john@test.com, phone 416-555-1234"
+        );
+        assert!(!result.clean);
+        // Should find at least 3 matches across different categories
+        assert!(result.match_count >= 3);
+        let categories: std::collections::HashSet<&str> =
+            result.matches.iter().map(|m| m.category).collect();
+        assert!(categories.contains("government_id"));
+        assert!(categories.contains("contact"));
+    }
+
+    #[test]
+    fn test_pii_with_special_characters_around() {
+        let scanner = PiiScanner::new();
+        // PII in parentheses, brackets, quotes — phone without space after parens
+        let result = scanner.scan(
+            "Contact [test@example.com] or call (416)555-1234 today!"
+        );
+        assert!(!result.clean);
+        assert!(result.match_count >= 2);
+        assert!(result.matches.iter().any(|m| m.pattern_name == "Email"));
+        assert!(result.matches.iter().any(|m| m.pattern_name == "Canadian Phone"));
+    }
+
+    #[test]
+    fn test_unicode_with_pii() {
+        let scanner = PiiScanner::new();
+        let result = scanner.scan("用户邮箱是 test@example.com");
+        assert!(!result.clean);
+        assert!(result.matches.iter().any(|m| m.pattern_name == "Email"));
+    }
+
+    #[test]
+    fn test_redaction_preserves_structure() {
+        let scanner = PiiScanner::new();
+        let redacted = scanner.redact(
+            "Contact: test@example.com and 416-555-1234",
+            "[PRIVACY]",
+        );
+        assert!(!redacted.contains("test@example.com"));
+        assert!(!redacted.contains("416-555-1234"));
+        // Structure should be preserved
+        assert!(redacted.contains("Contact:"));
+        assert!(redacted.contains("[PRIVACY]"));
+    }
+
+    #[test]
+    fn test_empty_string() {
+        let scanner = PiiScanner::new();
+        let result = scanner.scan("");
+        assert!(result.clean);
+        assert_eq!(result.match_count, 0);
+        assert_eq!(result.critical_count, 0);
+
+        let redacted = scanner.redact("", "[REDACTED]");
+        assert_eq!(redacted, "");
+    }
+
+    #[test]
+    fn test_long_string() {
+        let scanner = PiiScanner::new();
+        let long_text = "A".repeat(10000) + &"test@example.com".to_string();
+        let result = scanner.scan(&long_text);
+        assert!(!result.clean);
+        assert!(result.matches.iter().any(|m| m.pattern_name == "Email"));
+    }
+
+    #[test]
+    fn test_scan_returns_critical_count() {
+        let scanner = PiiScanner::new();
+        let result = scanner.scan("SIN: 123-456-789 and passport AB123456");
+        assert!(result.critical_count >= 2);
+        assert_eq!(result.critical_count,
+            result.matches.iter().filter(|m| m.severity == Severity::Critical).count());
+    }
 }

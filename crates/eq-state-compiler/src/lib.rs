@@ -367,4 +367,138 @@ mod tests {
         assert_eq!(AffectPrimary::Frustrated.to_string(), "frustrated");
         assert_eq!(AffectPrimary::Unknown.to_string(), "unknown");
     }
+
+    #[test]
+    fn test_all_affect_variants_serialize() {
+        let variants = vec![
+            AffectPrimary::Neutral,
+            AffectPrimary::Calm,
+            AffectPrimary::Curious,
+            AffectPrimary::Pleased,
+            AffectPrimary::Hopeful,
+            AffectPrimary::Confused,
+            AffectPrimary::Uncertain,
+            AffectPrimary::Frustrated,
+            AffectPrimary::Angry,
+            AffectPrimary::Sad,
+            AffectPrimary::Anxious,
+            AffectPrimary::Overwhelmed,
+            AffectPrimary::Fatigued,
+            AffectPrimary::Embarrassed,
+            AffectPrimary::Lonely,
+            AffectPrimary::Excited,
+            AffectPrimary::Urgent,
+            AffectPrimary::Unknown,
+        ];
+        for variant in &variants {
+            let json = serde_json::to_value(variant).expect("serialize");
+            assert!(json.is_string(), "Variant {:?} should serialize to a string", variant);
+        }
+    }
+
+    #[test]
+    fn test_all_intent_variants_serialize() {
+        let variants = vec![
+            IntentCategory::PracticalGuidance,
+            IntentCategory::EmotionalSupport,
+            IntentCategory::DecisionSupport,
+            IntentCategory::Venting,
+            IntentCategory::Planning,
+            IntentCategory::Clarification,
+            IntentCategory::ConflictNavigation,
+            IntentCategory::Reflection,
+            IntentCategory::TaskExecution,
+            IntentCategory::CreativeHelp,
+            IntentCategory::TechnicalHelp,
+            IntentCategory::SafetyRelated,
+            IntentCategory::Unknown,
+        ];
+        for variant in &variants {
+            let json = serde_json::to_value(variant).expect("serialize");
+            assert!(json.is_string(), "Variant {:?} should serialize to a string", variant);
+        }
+    }
+
+    #[test]
+    fn test_all_risk_levels_serialize() {
+        let variants = vec![
+            RiskLevel::None,
+            RiskLevel::Low,
+            RiskLevel::Medium,
+            RiskLevel::High,
+            RiskLevel::Crisis,
+            RiskLevel::Unknown,
+        ];
+        for variant in &variants {
+            let json = serde_json::to_value(variant).expect("serialize");
+            assert!(json.is_string(), "Variant {:?} should serialize to a string", variant);
+        }
+    }
+
+    #[test]
+    fn test_all_tone_variants_serialize() {
+        let variants = vec![
+            ResponseTone::CalmDirect,
+            ResponseTone::GentleDirect,
+            ResponseTone::WarmBrief,
+            ResponseTone::NeutralProfessional,
+            ResponseTone::HighlyPractical,
+            ResponseTone::Reflective,
+            ResponseTone::Encouraging,
+            ResponseTone::Minimal,
+            ResponseTone::Unknown,
+        ];
+        for variant in &variants {
+            let json = serde_json::to_value(variant).expect("serialize");
+            assert!(json.is_string(), "Variant {:?} should serialize to a string", variant);
+        }
+    }
+
+    #[test]
+    fn test_from_json_invalid_returns_none() {
+        assert!(EQState::from_json("").is_none());
+        assert!(EQState::from_json("not json").is_none());
+        assert!(EQState::from_json("{}").is_none());
+        assert!(EQState::from_json(r#"{"schema_version":123}"#).is_none());
+    }
+
+    #[test]
+    fn test_response_policy_defaults() {
+        let policy = ResponsePolicy {
+            tone: ResponseTone::NeutralProfessional,
+            warmth: 0.5,
+            directness: 0.5,
+            length: "short".to_string(),
+            pace: "steady".to_string(),
+            max_followup_questions: 2,
+            format: "prose".to_string(),
+        };
+        let json = serde_json::to_value(&policy).expect("serialize");
+        assert_eq!(json["pace"], "steady");
+        assert_eq!(json["max_followup_questions"], 2);
+        assert_eq!(json["format"], "prose");
+    }
+
+    #[test]
+    fn test_session_info_serialize() {
+        let session = SessionInfo {
+            ephemeral_session_id: "550e8400-e29b-41d4-a716-446655440000".to_string(),
+            timestamp_local: "2026-06-08T12:00:00Z".to_string(),
+            device_processing_only: true,
+        };
+        let json = serde_json::to_value(&session).expect("serialize");
+        assert_eq!(json["device_processing_only"], true);
+        assert_eq!(json["ephemeral_session_id"], "550e8400-e29b-41d4-a716-446655440000");
+    }
+
+    #[test]
+    fn test_all_7_top_level_fields() {
+        let state = sample_eq_state();
+        let json = state.to_json_compact().expect("serialize");
+        let parsed: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
+        let required = ["schema_version", "session", "affect", "intent", "risk", "privacy", "response_policy", "context"];
+        for field in &required {
+            assert!(parsed.get(*field).is_some(), "Missing required field: {}", field);
+        }
+    }
 }

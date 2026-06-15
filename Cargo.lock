@@ -186,6 +186,7 @@ dependencies = [
  "eq-memory",
  "eq-privacy-filter",
  "eq-state-compiler",
+ "serde_json",
  "thiserror",
  "uniffi",
 ]
