@@ -11,7 +11,7 @@
 
 ## Overview
 
-EQ Gateway is an on-device privacy layer for emotionally intelligent AI. It converts sensitive raw user input into a **constrained, anonymized, structured metadata payload** called **EQ State**. Cloud AI agents receive only this metadata, never the raw user text, ensuring that the most sensitive context never leaves the device.
+EQ Gateway is an on-device privacy layer for privacy-aware agentic AI. It converts sensitive raw user input into a **constrained, anonymized, structured metadata payload** called **EQ State**. Cloud AI agents receive only this metadata, never the raw user text, ensuring that the most sensitive context never leaves the device.
 
 ### The Core Thesis
 
@@ -19,7 +19,7 @@ EQ Gateway is an on-device privacy layer for emotionally intelligent AI. It conv
 
 ### Key Differentiator
 
-EQ Gateway is not an AI assistant — it is a **privacy firewall for AI interactions**. It computesS, approves, and transports privacy-safe state objects, acting as a secure buffer between the human and the cloud.
+EQ Gateway is not an AI assistant — it is a **privacy firewall for AI interactions**. It computes, approves, and transports privacy-safe state objects, acting as a secure buffer between the human and the cloud.
 
 ---
 
@@ -230,8 +230,8 @@ python src/mcp_bridge/server.py
 ## Related Proofs
 This project is part of a broader agentic AI safety architecture:
 - [EQ Gateway](https://github.com/andrewdhannah/EQ-Gateway) — Context Boundary / Privacy Firewall (This project)
-- [Work Packet Compiler](https://github.com/andrewdhannah/work-packet-compiler) — Action Boundary / Governed Delegation
-- [Agentic OS Proof](https://github.com/andrewdhannah/agentic-os-proof) — Integrated Governance Runtime
+- [Work Packet Compiler](https://github.com/andrewdhannah/Work-Packet-Compiler) — Action Boundary / Governed Delegation
+- [Agentic OS Proof](https://github.com/andrewdhannah/Agentic-OS-Proof) — Integrated Governance Runtime
 
 ---
 
